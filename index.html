@@ -3,21 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>DevPortfolio | Dynamic Theme Builder</title>
+  <meta name="description" content="Dynamic Developer Portfolio Theme - Live editor with real-time preview" />
+  <title>DevPortfolio Pro | Dynamic Theme Builder</title>
+  
   <!-- Preconnect & Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
     <!-- SIDEBAR – Controls Panel -->
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Portfolio controls sidebar">
       <div class="logo-area">
-        <div class="logo-mark">&lt;/&gt;</div>
+        <div class="logo-mark" aria-label="Logo">&lt;/&gt;</div>
         <div>
           <h2>DevTheme Studio</h2>
           <p>live portfolio editor</p>
@@ -25,39 +30,55 @@
       </div>
 
       <div class="control-group">
-        <label><i class="fa-regular fa-user"></i> Full name</label>
-        <input type="text" id="inputName" placeholder="Alex Morgan" autocomplete="off">
+        <label for="inputName"><i class="fa-regular fa-user"></i> Full name</label>
+        <input type="text" id="inputName" placeholder="Alex Morgan" autocomplete="off" maxlength="50">
       </div>
 
       <div class="control-group">
-        <label><i class="fa-regular fa-badge"></i> Professional title</label>
-        <input type="text" id="inputTitle" placeholder="Senior Full Stack Developer">
+        <label for="inputTitle"><i class="fa-regular fa-badge"></i> Professional title</label>
+        <input type="text" id="inputTitle" placeholder="Senior Full Stack Developer" maxlength="60">
       </div>
 
       <div class="control-group">
-        <label><i class="fa-regular fa-pen-line"></i> Bio / summary</label>
-        <textarea id="inputBio" rows="3" placeholder="Passionate engineer focused on scalable products..."></textarea>
+        <label for="inputBio"><i class="fa-regular fa-pen-line"></i> Bio / summary</label>
+        <textarea id="inputBio" rows="3" placeholder="Passionate engineer focused on scalable products..." maxlength="300"></textarea>
+        <small class="char-counter">0/300</small>
       </div>
 
       <div class="control-group">
-        <label><i class="fa-regular fa-image"></i> Avatar URL</label>
-        <input type="text" id="inputImage" placeholder="https://randomuser.me/api/portraits/men/32.jpg">
+        <label for="inputImage"><i class="fa-regular fa-image"></i> Avatar URL</label>
+        <input type="url" id="inputImage" placeholder="https://randomuser.me/api/portraits/men/32.jpg">
       </div>
 
       <div class="control-group">
-        <label><i class="fa-regular fa-envelope"></i> Email address</label>
+        <label for="inputEmail"><i class="fa-regular fa-envelope"></i> Email address</label>
         <input type="email" id="inputEmail" placeholder="alex@example.com">
       </div>
 
       <div class="control-group">
-        <label><i class="fa-regular fa-location-dot"></i> Location</label>
-        <input type="text" id="inputLocation" placeholder="Nairobi, Kenya">
+        <label for="inputLocation"><i class="fa-regular fa-location-dot"></i> Location</label>
+        <input type="text" id="inputLocation" placeholder="Nairobi, Kenya" maxlength="50">
+      </div>
+
+      <div class="control-group">
+        <label><i class="fa-brands fa-github"></i> GitHub Username</label>
+        <input type="text" id="inputGithub" placeholder="github.com/username">
+      </div>
+
+      <div class="control-group">
+        <label><i class="fa-brands fa-linkedin"></i> LinkedIn Username</label>
+        <input type="text" id="inputLinkedin" placeholder="linkedin.com/in/username">
+      </div>
+
+      <div class="control-group">
+        <label><i class="fa-brands fa-twitter"></i> Twitter Handle</label>
+        <input type="text" id="inputTwitter" placeholder="@username">
       </div>
 
       <div class="control-group">
         <label><i class="fa-regular fa-tag"></i> Skills (click to remove)</label>
         <div class="skill-input-group">
-          <input type="text" id="newSkillInput" placeholder="e.g., React, Figma, Go" autocomplete="off">
+          <input type="text" id="newSkillInput" placeholder="e.g., React, Figma, Go" maxlength="30" autocomplete="off">
           <button id="addSkillBtn" class="btn-primary small" aria-label="Add skill">+ Add</button>
         </div>
         <div id="skillsTagContainer" class="tags-container"></div>
@@ -66,10 +87,20 @@
       <div class="divider"></div>
 
       <div class="action-buttons">
-        <button id="exportDataBtn" class="btn-outline"><i class="fa-regular fa-download"></i> Export JSON</button>
-        <button id="resetAllBtn" class="btn-danger"><i class="fa-regular fa-trash-can"></i> Reset all data</button>
+        <button id="exportDataBtn" class="btn-outline" aria-label="Export portfolio data">
+          <i class="fa-regular fa-download"></i> Export JSON
+        </button>
+        <button id="importDataBtn" class="btn-outline" aria-label="Import portfolio data">
+          <i class="fa-regular fa-upload"></i> Import JSON
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        <button id="resetAllBtn" class="btn-danger" aria-label="Reset all data">
+          <i class="fa-regular fa-trash-can"></i> Reset all data
+        </button>
       </div>
-      <p class="sidebar-hint">✨ Changes update preview instantly & auto-save</p>
+      <p class="sidebar-hint">
+        <i class="fa-regular fa-floppy-disk"></i> Auto-save • Changes sync instantly
+      </p>
     </aside>
 
     <!-- PREVIEW PANEL -->
