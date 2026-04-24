@@ -1,5 +1,5 @@
-// script.js – Developer Portfolio Theme (Enhanced Version)
-// Improvements: Project management, validation, accessibility, performance, debouncing
+// script.js – Developer Portfolio Theme (Enhanced Production Version)
+// Features: Project CRUD, Import/Export, Validation, Toast Notifications, Auto-save
 
 // ---------- DATA MODEL ----------
 let portfolioData = {
@@ -40,7 +40,7 @@ let portfolioData = {
   }
 };
 
-// Debounce utility for performance
+// Debounce utility for performance optimization
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -53,16 +53,6 @@ function debounce(func, wait) {
   };
 }
 
-// Helper: save to localStorage
-function persistData() {
-  try {
-    localStorage.setItem("dev_portfolio_theme", JSON.stringify(portfolioData));
-    showToast("✅ Changes saved", "success");
-  } catch (e) {
-    showToast("❌ Failed to save data", "error");
-  }
-}
-
 // Toast notification system
 function showToast(message, type = "info") {
   const existingToast = document.querySelector(".toast-notification");
@@ -70,9 +60,10 @@ function showToast(message, type = "info") {
   
   const toast = document.createElement("div");
   toast.className = `toast-notification toast-${type}`;
+  toast.setAttribute("role", "alert");
   toast.innerHTML = `
     <i class="fa-regular ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-info-circle'}"></i>
-    <span>${message}</span>
+    <span>${escapeHtml(message)}</span>
   `;
   document.body.appendChild(toast);
   
@@ -82,8 +73,8 @@ function showToast(message, type = "info") {
   }, 3000);
 }
 
-// Add CSS for toast notifications
-function addToastStyles() {
+// Add CSS for toast notifications and modals
+function addGlobalStyles() {
   const style = document.createElement('style');
   style.textContent = `
     .toast-notification {
@@ -102,10 +93,12 @@ function addToastStyles() {
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       font-size: 0.875rem;
       font-weight: 500;
+      font-family: 'Inter', sans-serif;
     }
     .toast-success { border-left-color: #00ff88; }
     .toast-error { border-left-color: #ef4444; }
     .toast-info { border-left-color: #00e5ff; }
+    
     @keyframes slideIn {
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -114,8 +107,77 @@ function addToastStyles() {
       from { transform: translateX(0); opacity: 1; }
       to { transform: translateX(100%); opacity: 0; }
     }
+    
+    .project-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10001;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: linear-gradient(135deg, #111827, #0f172a);
+      border: 1px solid #00e5ff;
+      border-radius: 28px;
+      padding: 28px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      animation: modalPop 0.3s ease;
+    }
+    @keyframes modalPop {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .modal-content h3 {
+      color: #00e5ff;
+      margin-bottom: 20px;
+    }
+    .modal-content input, .modal-content textarea {
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
   `;
   document.head.appendChild(style);
+}
+
+// Helper: save to localStorage
+function persistData() {
+  try {
+    localStorage.setItem("dev_portfolio_theme", JSON.stringify(portfolioData));
+  } catch (e) {
+    showToast("❌ Failed to save data", "error");
+  }
 }
 
 // Load stored data with validation
@@ -124,38 +186,50 @@ function loadStoredData() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      // Validate required fields
       if (parsed && typeof parsed === 'object') {
         portfolioData = { ...portfolioData, ...parsed };
         if (!portfolioData.skills) portfolioData.skills = [];
         if (!portfolioData.projects) portfolioData.projects = [];
         if (!portfolioData.socialLinks) portfolioData.socialLinks = {};
         // Ensure each project has an id
-        portfolioData.projects = portfolioData.projects.map(p => ({ ...p, id: p.id || crypto.randomUUID?.() || Date.now() + Math.random() }));
+        portfolioData.projects = portfolioData.projects.map(p => ({ 
+          ...p, 
+          id: p.id || crypto.randomUUID?.() || Date.now() + Math.random() 
+        }));
       }
     } catch(e) { 
       console.warn("Failed to parse saved data");
-      showToast("⚠️ Loaded default theme", "info");
     }
   }
 }
 
-// Validate email format
+// Validation functions
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// Validate image URL
 function isValidImageUrl(url) {
   return url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:'));
 }
 
-// Escape HTML
+// Escape HTML to prevent XSS
 function escapeHtml(str) {
   if (!str) return '';
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+// Update character counter for bio
+function updateCharCounter() {
+  const bioInput = document.getElementById("inputBio");
+  const counter = document.querySelector(".char-counter");
+  if (bioInput && counter) {
+    const length = bioInput.value.length;
+    counter.textContent = `${length}/300`;
+    if (length > 280) counter.style.color = "#f9735e";
+    else counter.style.color = "#94a3b8";
+  }
 }
 
 // Render portfolio preview
@@ -174,16 +248,25 @@ function renderPortfolio() {
   
   const projectsHtml = portfolioData.projects.map(proj => `
     <div class="project-entry" data-project-id="${proj.id}">
-      <div style="display: flex; justify-content: space-between; align-items: start;">
+      <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap;">
         <h4><i class="fa-regular fa-folder-open"></i> ${escapeHtml(proj.title)}</h4>
         <div style="display: flex; gap: 8px;">
-          <button class="edit-project-btn" data-id="${proj.id}" aria-label="Edit project"><i class="fa-regular fa-pen"></i></button>
-          <button class="delete-project-btn" data-id="${proj.id}" aria-label="Delete project"><i class="fa-regular fa-trash-can"></i></button>
+          <button class="edit-project-btn" data-id="${proj.id}" aria-label="Edit project">
+            <i class="fa-regular fa-pen"></i>
+          </button>
+          <button class="delete-project-btn" data-id="${proj.id}" aria-label="Delete project">
+            <i class="fa-regular fa-trash-can"></i>
+          </button>
         </div>
       </div>
       <p>${escapeHtml(proj.desc)}</p>
-      ${proj.technologies ? `<div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">${proj.technologies.map(t => `<span style="font-size: 0.7rem; background: #00e5ff20; padding: 2px 8px; border-radius: 12px;">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
-      <a href="${escapeHtml(proj.link)}" class="project-link" target="_blank" rel="noopener noreferrer">View Project →</a>
+      ${proj.technologies && proj.technologies.length ? 
+        `<div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+          ${proj.technologies.map(t => `<span style="font-size: 0.7rem; background: #00e5ff20; padding: 2px 8px; border-radius: 12px;">${escapeHtml(t)}</span>`).join('')}
+        </div>` : ''}
+      <a href="${escapeHtml(proj.link)}" class="project-link" target="_blank" rel="noopener noreferrer">
+        View Project <i class="fa-regular fa-arrow-right"></i>
+      </a>
     </div>
   `).join('');
   
@@ -191,7 +274,8 @@ function renderPortfolio() {
   
   const html = `
     <div class="hero-card">
-      <img src="${safeImage}" alt="${safeName}'s avatar" class="avatar-img" loading="lazy" onerror="this.src='https://ui-avatars.com/api/?background=00e5ff&color=000&bold=true&name=${encodeURIComponent(portfolioData.name)}'">
+      <img src="${safeImage}" alt="${safeName}'s avatar" class="avatar-img" loading="lazy" 
+           onerror="this.src='https://ui-avatars.com/api/?background=00e5ff&color=000&bold=true&name=${encodeURIComponent(portfolioData.name)}'">
       <div class="hero-info">
         <div class="hero-name">${safeName}</div>
         <div class="hero-title">⚡ ${safeTitle}</div>
@@ -216,18 +300,24 @@ function renderPortfolio() {
         <h3><i class="fa-regular fa-address-card"></i> Connect</h3>
         <div class="contact-links">
           <a href="mailto:${safeEmail}" class="contact-link"><i class="fa-regular fa-envelope"></i> ${safeEmail}</a>
-          <a href="https://${portfolioData.socialLinks.github || 'github.com'}" target="_blank" class="contact-link"><i class="fa-brands fa-github"></i> ${portfolioData.socialLinks.github || 'GitHub'}</a>
-          <a href="https://${portfolioData.socialLinks.linkedin || 'linkedin.com'}" target="_blank" class="contact-link"><i class="fa-brands fa-linkedin"></i> LinkedIn</a>
+          <a href="https://${portfolioData.socialLinks.github || 'github.com'}" target="_blank" class="contact-link">
+            <i class="fa-brands fa-github"></i> ${portfolioData.socialLinks.github || 'GitHub'}
+          </a>
+          <a href="https://${portfolioData.socialLinks.linkedin || 'linkedin.com'}" target="_blank" class="contact-link">
+            <i class="fa-brands fa-linkedin"></i> LinkedIn
+          </a>
         </div>
       </div>
 
       <div class="info-card projects-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 12px;">
           <h3 style="margin-bottom: 0;"><i class="fa-regular fa-diagram-project"></i> Featured Projects</h3>
-          <button id="addProjectBtn" class="btn-primary small" style="padding: 6px 14px;">+ New Project</button>
+          <button id="addProjectBtn" class="btn-primary small" style="padding: 6px 14px;">
+            <i class="fa-regular fa-plus"></i> New Project
+          </button>
         </div>
         <div class="project-list">
-          ${projectsHtml || '<div class="project-entry"><p>✨ No projects yet. Click "New Project" to add your work!</p></div>'}
+          ${projectsHtml || '<div class="project-entry"><p>✨ No projects yet. Click "New Project" to showcase your work!</p></div>'}
         </div>
       </div>
     </div>
@@ -261,14 +351,21 @@ function renderPortfolio() {
 function showProjectModal(projectToEdit = null) {
   const modal = document.createElement('div');
   modal.className = 'project-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-label', projectToEdit ? 'Edit Project' : 'Add New Project');
+  
   modal.innerHTML = `
     <div class="modal-overlay">
       <div class="modal-content">
-        <h3>${projectToEdit ? 'Edit Project' : 'Add New Project'}</h3>
-        <input type="text" id="modalProjectTitle" placeholder="Project title" value="${projectToEdit ? escapeHtml(projectToEdit.title) : ''}">
-        <textarea id="modalProjectDesc" placeholder="Project description" rows="3">${projectToEdit ? escapeHtml(projectToEdit.desc) : ''}</textarea>
-        <input type="url" id="modalProjectLink" placeholder="Project URL (https://...)" value="${projectToEdit ? escapeHtml(projectToEdit.link) : ''}">
-        <input type="text" id="modalProjectTech" placeholder="Technologies (comma separated)" value="${projectToEdit && projectToEdit.technologies ? projectToEdit.technologies.join(', ') : ''}">
+        <h3>${projectToEdit ? '✏️ Edit Project' : '➕ Add New Project'}</h3>
+        <input type="text" id="modalProjectTitle" placeholder="Project title *" 
+               value="${projectToEdit ? escapeHtml(projectToEdit.title) : ''}" maxlength="100">
+        <textarea id="modalProjectDesc" placeholder="Project description" rows="3" 
+                  maxlength="300">${projectToEdit ? escapeHtml(projectToEdit.desc) : ''}</textarea>
+        <input type="url" id="modalProjectLink" placeholder="Project URL (https://...)" 
+               value="${projectToEdit ? escapeHtml(projectToEdit.link) : ''}">
+        <input type="text" id="modalProjectTech" placeholder="Technologies (comma separated)" 
+               value="${projectToEdit && projectToEdit.technologies ? projectToEdit.technologies.join(', ') : ''}">
         <div class="modal-buttons">
           <button class="btn-outline" id="modalCancelBtn">Cancel</button>
           <button class="btn-primary" id="modalSaveBtn">${projectToEdit ? 'Update' : 'Save'}</button>
@@ -295,14 +392,18 @@ function showProjectModal(projectToEdit = null) {
     }
     
     if (projectToEdit) {
-      // Update existing
       const index = portfolioData.projects.findIndex(p => p.id === projectToEdit.id);
       if (index !== -1) {
-        portfolioData.projects[index] = { ...portfolioData.projects[index], title, desc, link, technologies };
-        showToast("✅ Project updated", "success");
+        portfolioData.projects[index] = { 
+          ...portfolioData.projects[index], 
+          title, 
+          desc: desc || "No description provided", 
+          link: link || "#", 
+          technologies 
+        };
+        showToast("✅ Project updated successfully", "success");
       }
     } else {
-      // Add new
       const newProject = {
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + Math.random(),
         title,
@@ -311,7 +412,7 @@ function showProjectModal(projectToEdit = null) {
         technologies
       };
       portfolioData.projects.push(newProject);
-      showToast("✅ New project added", "success");
+      showToast("✅ New project added successfully", "success");
     }
     
     persistData();
@@ -324,6 +425,14 @@ function showProjectModal(projectToEdit = null) {
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) modal.remove();
   });
+  
+  // Enter key support
+  const titleInput = document.getElementById('modalProjectTitle');
+  if (titleInput) {
+    titleInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') saveHandler();
+    });
+  }
 }
 
 function editProjectById(id) {
@@ -332,7 +441,7 @@ function editProjectById(id) {
 }
 
 function deleteProjectById(id) {
-  if (confirm("⚠️ Delete this project permanently?")) {
+  if (confirm("⚠️ Are you sure you want to delete this project permanently?")) {
     portfolioData.projects = portfolioData.projects.filter(p => p.id !== id);
     persistData();
     renderPortfolio();
@@ -353,7 +462,8 @@ function renderSkillsTagsInSidebar() {
   container.innerHTML = portfolioData.skills.map((skill, idx) => `
     <div class="tag-item">
       ${escapeHtml(skill)}
-      <i class="fa-regular fa-circle-xmark" data-skill-index="${idx}" role="button" aria-label="Remove skill" tabindex="0"></i>
+      <i class="fa-regular fa-circle-xmark" data-skill-index="${idx}" role="button" 
+         aria-label="Remove skill ${escapeHtml(skill)}" tabindex="0"></i>
     </div>
   `).join('');
   
@@ -364,17 +474,17 @@ function renderSkillsTagsInSidebar() {
       if (indexAttr !== null) {
         const idx = parseInt(indexAttr, 10);
         if (!isNaN(idx) && idx >= 0 && idx < portfolioData.skills.length) {
+          const removed = portfolioData.skills[idx];
           portfolioData.skills.splice(idx, 1);
           syncInputsFromData();
           renderPortfolio();
           renderSkillsTagsInSidebar();
           persistData();
-          showToast(`✨ Skill removed`, "info");
+          showToast(`✨ Removed "${removed}"`, "info");
         }
       }
     });
     
-    // Keyboard accessibility
     icon.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -388,7 +498,7 @@ function renderSkillsTagsInSidebar() {
 const debouncedRender = debounce(() => {
   renderPortfolio();
   persistData();
-}, 100);
+}, 150);
 
 // Bind inputs to data with validation
 function bindInputsToData() {
@@ -415,58 +525,79 @@ function bindInputsToData() {
   if (inputs.linkedin) inputs.linkedin.value = portfolioData.socialLinks.linkedin || '';
   if (inputs.twitter) inputs.twitter.value = portfolioData.socialLinks.twitter || '';
   
+  // Update char counter
+  if (inputs.bio) updateCharCounter();
+  
   // Event listeners with validation
-  if (inputs.name) inputs.name.addEventListener("input", (e) => {
-    portfolioData.name = e.target.value.slice(0, 50);
-    debouncedRender();
-  });
+  if (inputs.name) {
+    inputs.name.addEventListener("input", (e) => {
+      portfolioData.name = e.target.value.slice(0, 50);
+      debouncedRender();
+    });
+  }
   
-  if (inputs.email) inputs.email.addEventListener("input", (e) => {
-    const email = e.target.value;
-    portfolioData.email = email;
-    if (email && !isValidEmail(email)) {
-      inputs.email.style.borderColor = "#ef4444";
-      showToast("⚠️ Invalid email format", "error");
-    } else {
-      inputs.email.style.borderColor = "";
-    }
-    debouncedRender();
-  });
+  if (inputs.email) {
+    inputs.email.addEventListener("input", (e) => {
+      const email = e.target.value;
+      portfolioData.email = email;
+      if (email && !isValidEmail(email)) {
+        inputs.email.style.borderColor = "#ef4444";
+      } else {
+        inputs.email.style.borderColor = "";
+      }
+      debouncedRender();
+    });
+  }
   
-  if (inputs.image) inputs.image.addEventListener("input", (e) => {
-    portfolioData.image = e.target.value;
-    debouncedRender();
-  });
+  if (inputs.image) {
+    inputs.image.addEventListener("input", (e) => {
+      portfolioData.image = e.target.value;
+      debouncedRender();
+    });
+  }
   
-  if (inputs.title) inputs.title.addEventListener("input", (e) => {
-    portfolioData.title = e.target.value.slice(0, 60);
-    debouncedRender();
-  });
+  if (inputs.title) {
+    inputs.title.addEventListener("input", (e) => {
+      portfolioData.title = e.target.value.slice(0, 60);
+      debouncedRender();
+    });
+  }
   
-  if (inputs.bio) inputs.bio.addEventListener("input", (e) => {
-    portfolioData.bio = e.target.value.slice(0, 300);
-    debouncedRender();
-  });
+  if (inputs.bio) {
+    inputs.bio.addEventListener("input", (e) => {
+      portfolioData.bio = e.target.value.slice(0, 300);
+      updateCharCounter();
+      debouncedRender();
+    });
+  }
   
-  if (inputs.location) inputs.location.addEventListener("input", (e) => {
-    portfolioData.location = e.target.value.slice(0, 50);
-    debouncedRender();
-  });
+  if (inputs.location) {
+    inputs.location.addEventListener("input", (e) => {
+      portfolioData.location = e.target.value.slice(0, 50);
+      debouncedRender();
+    });
+  }
   
-  if (inputs.github) inputs.github.addEventListener("input", (e) => {
-    portfolioData.socialLinks.github = e.target.value;
-    debouncedRender();
-  });
+  if (inputs.github) {
+    inputs.github.addEventListener("input", (e) => {
+      portfolioData.socialLinks.github = e.target.value;
+      debouncedRender();
+    });
+  }
   
-  if (inputs.linkedin) inputs.linkedin.addEventListener("input", (e) => {
-    portfolioData.socialLinks.linkedin = e.target.value;
-    debouncedRender();
-  });
+  if (inputs.linkedin) {
+    inputs.linkedin.addEventListener("input", (e) => {
+      portfolioData.socialLinks.linkedin = e.target.value;
+      debouncedRender();
+    });
+  }
   
-  if (inputs.twitter) inputs.twitter.addEventListener("input", (e) => {
-    portfolioData.socialLinks.twitter = e.target.value;
-    debouncedRender();
-  });
+  if (inputs.twitter) {
+    inputs.twitter.addEventListener("input", (e) => {
+      portfolioData.socialLinks.twitter = e.target.value;
+      debouncedRender();
+    });
+  }
 }
 
 // Setup skill addition
@@ -478,7 +609,7 @@ function setupSkillAddition() {
     let val = skillInput.value.trim();
     if (val !== "") {
       if (val.length > 30) {
-        showToast("⚠️ Skill name too long (max 30 chars)", "error");
+        showToast("⚠️ Skill name too long (max 30 characters)", "error");
         return;
       }
       if (!portfolioData.skills.some(s => s.toLowerCase() === val.toLowerCase())) {
@@ -487,11 +618,13 @@ function setupSkillAddition() {
         renderSkillsTagsInSidebar();
         renderPortfolio();
         skillInput.value = "";
-        showToast(`➕ "${val}" added`, "success");
+        showToast(`➕ Added "${val}"`, "success");
       } else {
-        showToast(`⚠️ "${val}" already exists`, "error");
+        showToast(`⚠️ "${val}" already exists in your skills`, "error");
         skillInput.value = "";
       }
+    } else {
+      showToast("⚠️ Please enter a skill name", "error");
     }
   };
   
@@ -511,7 +644,7 @@ function setupReset() {
   const resetBtn = document.getElementById("resetAllBtn");
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
-      const confirmReset = confirm("⚠️ WARNING: This will erase ALL your custom data and restore the default portfolio. This action cannot be undone. Continue?");
+      const confirmReset = confirm("⚠️ WARNING: This will erase ALL your custom data and restore the default portfolio. This action cannot be undone.\n\nAre you sure you want to continue?");
       if (confirmReset) {
         localStorage.removeItem("dev_portfolio_theme");
         location.reload();
@@ -562,8 +695,10 @@ function setupImport() {
         reader.onload = (event) => {
           try {
             const imported = JSON.parse(event.target.result);
-            if (imported.name && imported.skills) {
+            if (imported.name && imported.skills && Array.isArray(imported.skills)) {
               portfolioData = { ...portfolioData, ...imported };
+              if (!portfolioData.projects) portfolioData.projects = [];
+              if (!portfolioData.socialLinks) portfolioData.socialLinks = {};
               syncInputsFromData();
               renderSkillsTagsInSidebar();
               renderPortfolio();
@@ -604,16 +739,25 @@ function syncInputsFromData() {
   if (githubInput) githubInput.value = portfolioData.socialLinks.github || '';
   if (linkedinInput) linkedinInput.value = portfolioData.socialLinks.linkedin || '';
   if (twitterInput) twitterInput.value = portfolioData.socialLinks.twitter || '';
+  if (bioInput) updateCharCounter();
 }
 
-
-  document.head.appendChild(style);
+// Keyboard shortcuts
+function setupKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + S to export
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      const exportBtn = document.getElementById("exportDataBtn");
+      if (exportBtn) exportBtn.click();
+      showToast("💾 Export triggered", "info");
+    }
+  });
 }
 
 // Initialize everything
 function init() {
-  addToastStyles();
-  addModalStyles();
+  addGlobalStyles();
   loadStoredData();
   syncInputsFromData();
   bindInputsToData();
@@ -623,6 +767,12 @@ function init() {
   setupReset();
   setupExport();
   setupImport();
+  setupKeyboardShortcuts();
 }
 
-document.addEventListener("DOMContentLoaded", init);
+// Start the application when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
