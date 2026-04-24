@@ -606,59 +606,7 @@ function syncInputsFromData() {
   if (twitterInput) twitterInput.value = portfolioData.socialLinks.twitter || '';
 }
 
-// Add modal styles
-function addModalStyles() {
-  const style = document.createElement('style');
-  style.textContent = `
-    .project-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 10000;
-      animation: fadeIn 0.2s ease;
-    }
-    .modal-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(8px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-content {
-      background: linear-gradient(135deg, #111827, #0f172a);
-      border: 1px solid #00e5ff;
-      border-radius: 28px;
-      padding: 28px;
-      width: 90%;
-      max-width: 500px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-    }
-    .modal-content h3 {
-      color: #00e5ff;
-      margin-bottom: 20px;
-    }
-    .modal-content input, .modal-content textarea {
-      margin-bottom: 16px;
-      width: 100%;
-    }
-    .modal-buttons {
-      display: flex;
-      gap: 12px;
-      justify-content: flex-end;
-      margin-top: 20px;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-  `;
+
   document.head.appendChild(style);
 }
 
